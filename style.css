@@ -146,3 +146,23 @@ main{max-width:1200px;margin:0 auto;padding:1.35rem 1rem 5rem}
   .stage{width:min(48vw,760px);height:min(78vh,760px)}
   .reveal-card{width:520px}
 }
+
+/* Identité des rangs : couleur distincte pour chaque rang, rouge pour les éliminés. */
+.reveal-card[data-rank="1"]{--accent:#f2bd3f}
+.reveal-card[data-rank="2"]{--accent:#e3e7ee}
+.reveal-card[data-rank="3"]{--accent:#d18b5e}
+.reveal-card[data-rank="4"]{--accent:#62a8e8}
+.reveal-card[data-status="eliminated"]{--accent:#ef5b63}
+.rank-lockup{color:var(--accent)}
+.scene-status{color:var(--accent);border-color:var(--accent)}
+.reveal-card[data-status="eliminated"] .card-face{box-shadow:inset 0 0 0 1px rgba(239,91,99,.22),0 20px 65px rgba(0,0,0,.62),0 0 36px rgba(239,91,99,.07)}
+.result-card.rank-1{border-top:2px solid #f2bd3f}.result-card.rank-1 .result-rank{color:#f2bd3f}
+.result-card.rank-2{border-top:2px solid #e3e7ee}.result-card.rank-2 .result-rank{color:#e3e7ee}
+.result-card.rank-3{border-top:2px solid #d18b5e}.result-card.rank-3 .result-rank{color:#d18b5e}
+.result-card.rank-4{border-top:2px solid #62a8e8}.result-card.rank-4 .result-rank{color:#62a8e8}
+.result-card.rank-eliminated{border-top:2px solid #ef5b63}.result-card.rank-eliminated .result-status{color:#ef5b63}.result-card.rank-eliminated .result-meter i{background:#ef5b63}
+.sound-unlock{display:inline-flex;border:1px solid rgba(255,255,255,.12);background:rgba(10,10,12,.72);color:#d6d0c7;border-radius:999px;padding:.3rem .65rem;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+#music-credit{color:#77736d;text-decoration:none}
+#music-credit:hover{color:#aaa49c}
+#suspense-audio{display:none}
+@media(max-width:700px){.scene-footer{justify-content:center;flex-wrap:wrap;text-align:center;line-height:1.35}#music-credit{flex-basis:100%}}

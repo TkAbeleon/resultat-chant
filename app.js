@@ -94,6 +94,8 @@
     $("#scene-index").textContent = `${index + 1} / ${state.sequence.length}`;
 
     const card = $("#reveal-card");
+    card.dataset.rank = candidate.rank ? String(candidate.rank) : "eliminated";
+    card.dataset.status = isRetained ? "retained" : "eliminated";
     card.classList.remove("show", "reveal-retained", "reveal-eliminated");
     void card.offsetWidth;
     card.classList.add(isRetained ? "reveal-retained" : "reveal-eliminated", "show");
@@ -201,100 +203,42 @@
     dust.appendChild(fragment);
   }
 
-  const audioState = {
-    ctx: null,
-    master: null,
-    drone: null,
-    pulseTimer: null,
-  };
+  const audioState = { element: null };
 
-  function pulseSound(isRetained) {
-    const sound = audioState;
-    if (!sound.ctx || sound.ctx.state !== "running") return;
-
-    const now = sound.ctx.currentTime;
-    const oscillator = sound.ctx.createOscillator();
-    const gain = sound.ctx.createGain();
-
-    oscillator.type = isRetained ? "sine" : "triangle";
-    oscillator.frequency.setValueAtTime(isRetained ? 146.83 : 98, now);
-    oscillator.frequency.exponentialRampToValueAtTime(isRetained ? 220 : 130.81, now + 0.28);
-
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(isRetained ? 0.055 : 0.035, now + 0.03);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.62);
-
-    oscillator.connect(gain).connect(sound.master);
-    oscillator.start(now);
-    oscillator.stop(now + 0.66);
-  }
-
-  function startSuspenseAudio() {
-    if (audioState.ctx) {
-      if (audioState.ctx.state === "suspended") audioState.ctx.resume().catch(() => {});
-      if (audioState.ctx.state === "running") $("#sound-note").textContent = "Ambiance active";
-      return audioState.ctx.state === "running";
-    }
+  async function startSuspenseAudio() {
+    const audio = $("#suspense-audio");
+    if (!audio) return false;
+    audioState.element = audio;
+    audio.volume = 0.42;
 
     try {
-      const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContextCtor) return false;
-
-      const ctx = new AudioContextCtor();
-      const master = ctx.createGain();
-      master.gain.value = 0.045;
-      master.connect(ctx.destination);
-
-      const drone = ctx.createOscillator();
-      const droneGain = ctx.createGain();
-
-      drone.type = "sine";
-      drone.frequency.value = 48;
-      droneGain.gain.value = 0.3;
-
-      drone.connect(droneGain).connect(master);
-      drone.start();
-
-      audioState.ctx = ctx;
-      audioState.master = master;
-      audioState.drone = drone;
-      audioState.pulseTimer = window.setInterval(() => pulseSound(true), 1900);
-
-      ctx.resume().catch(() => {});
-      if (ctx.state === "running") $("#sound-note").textContent = "Ambiance active";
-      return ctx.state === "running";
+      await audio.play();
+      $("#sound-note").textContent = "Ambiance active";
+      $("#sound-unlock").hidden = true;
+      return true;
     } catch (error) {
-      console.warn("Audio de suspense indisponible", error);
+      $("#sound-note").textContent = "Le navigateur attend l’activation du son";
+      $("#sound-unlock").hidden = false;
       return false;
     }
   }
 
   function stopSuspenseAudio() {
-    if (audioState.pulseTimer) window.clearInterval(audioState.pulseTimer);
-    audioState.pulseTimer = null;
-
-    if (audioState.drone) {
-      try { audioState.drone.stop(); } catch (_) {}
-    }
-
-    if (audioState.ctx) audioState.ctx.close().catch(() => {});
-
-    audioState.ctx = null;
-    audioState.master = null;
-    audioState.drone = null;
-  }
-
-  function attachAudioFallback() {
-    const unlock = () => {
-      if (state.phase !== "revealing") return;
-      if (startSuspenseAudio()) {
-        window.removeEventListener("pointerdown", unlock);
-        window.removeEventListener("keydown", unlock);
+    const audio = audioState.element;
+    if (!audio) return;
+    const startVolume = audio.volume;
+    const startedAt = performance.now();
+    const fade = () => {
+      const progress = Math.min(1, (performance.now() - startedAt) / 1000);
+      audio.volume = startVolume * (1 - progress);
+      if (progress < 1) requestAnimationFrame(fade);
+      else {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.volume = 0.42;
       }
     };
-
-    window.addEventListener("pointerdown", unlock);
-    window.addEventListener("keydown", unlock);
+    requestAnimationFrame(fade);
   }
 
   async function loadData() {
@@ -382,7 +326,7 @@
       const percent = Math.max(0, Math.min(100, (total / max) * 100));
 
       return `
-        <article class="result-card ${retained ? "retained" : "eliminated"}">
+        <article class="result-card ${retained ? "retained rank-" + (candidate.rank || "none") : "eliminated rank-eliminated"}">
           <div class="result-card-top">
             <span class="result-status">${esc(candidate.status || "Statut non renseigné")}</span>
             ${candidate.rank ? `<span class="result-rank">${candidate.rank}<sup>${candidate.rank === 1 ? "er" : "e"}</sup></span>` : ""}
@@ -463,7 +407,7 @@
       updateSequenceLabel();
 
       // Tentative d'autoplay. Les navigateurs peuvent exiger un premier geste utilisateur pour l'audio.
-      if (!startSuspenseAudio()) attachAudioFallback();
+      await startSuspenseAudio();
 
       await wait(900);
       await revealSequence();
