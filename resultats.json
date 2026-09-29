@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-29T14:43:57.920Z",
+  "updatedAt": "2026-09-29T14:47:00.311Z",
   "settings": {
     "retained": 4,
     "max": 20
@@ -93,12 +93,12 @@
       "video": "4.mp4",
       "photo": "",
       "scores": {
-        "justesse": 4,
+        "justesse": 4.5,
         "rythme": 3.5,
         "timbre": 4,
         "interpretation": 3
       },
-      "total": 14.5,
+      "total": 15,
       "status": "Retenu",
       "remark": ""
     }
