@@ -1,102 +1,484 @@
 (() => {
-"use strict";
-const $ = s => document.querySelector(s);
-const grid = $("#grid");
-let data = null, filter = "all", query = "", rv = false, revealed = 0;
+  "use strict";
 
-const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const fmt = n => Number(n).toLocaleString("fr-FR", {minimumFractionDigits: 1, maximumFractionDigits: 1});
-const rated = () => (data.candidates || []).filter(c => c.rank);
-const masked = c => rv && c.rank && rated().indexOf(c) < rated().length - revealed;
+  const $ = (selector, root = document) => root.querySelector(selector);
 
-async function load() {
-  try {
-    const r = await fetch("resultats.json?t=" + Date.now(), {cache: "no-store"});
-    if (!r.ok) throw new Error(r.status);
-    const d = await r.json();
-    if (JSON.stringify(d) !== JSON.stringify(data)) { data = d; render(); }
-  } catch (e) {
-    if (!data) {
-      grid.innerHTML = "";
-      $("#empty").hidden = false;
-      $("#empty").textContent = "Les résultats n'ont pas encore été publiés.";
+  const state = {
+    data: null,
+    sequence: [],
+    retained: [],
+    nonRetained: [],
+    current: -1,
+    phase: "loading",
+    revealed: false,
+    poll: null,
+    raf: 0,
+    mouse: { x: 0, y: 0, tx: 0, ty: 0 },
+  };
+
+  const DURATIONS = {
+    retained: 5200,
+    nonRetained: 3200,
+    between: 650,
+  };
+
+  const fmt = (value) => Number(value ?? 0).toLocaleString("fr-FR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+
+  const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[char]);
+
+  const numericTotal = (candidate) => {
+    const total = Number(candidate?.total);
+    return Number.isFinite(total) ? total : 0;
+  };
+
+  function normalizeStatus(candidate) {
+    return String(candidate?.status ?? "").trim().toLowerCase();
+  }
+
+  function buildRanking(candidates) {
+    const retained = [];
+    const nonRetained = [];
+
+    candidates.forEach((candidate, index) => {
+      const item = { ...candidate, __sourceIndex: index };
+      if (normalizeStatus(candidate) === "retenu") retained.push(item);
+      else nonRetained.push(item);
+    });
+
+    // Classement déterministe : note totale décroissante, puis ordre du fichier en cas d'égalité.
+    retained.sort((a, b) => numericTotal(b) - numericTotal(a) || a.__sourceIndex - b.__sourceIndex);
+
+    retained.forEach((candidate, index) => {
+      candidate.rank = index + 1;
+    });
+
+    return { retained, nonRetained };
+  }
+
+  function renderScoreRows(candidate) {
+    const scores = candidate?.scores ?? {};
+    const rows = [
+      ["Justesse", scores.justesse],
+      ["Rythme", scores.rythme],
+      ["Timbre", scores.timbre],
+      ["Interprétation", scores.interpretation],
+    ];
+
+    return rows.map(([label, value]) => `
+      <div class="score-row">
+        <span>${label}</span>
+        <strong>${Number.isFinite(Number(value)) ? fmt(value) : "—"}<small>/5</small></strong>
+      </div>
+    `).join("");
+  }
+
+  function renderSceneCandidate(candidate, index) {
+    const isRetained = normalizeStatus(candidate) === "retenu";
+    const rankLabel = candidate.rank ? `Rang ${candidate.rank}<sup>${candidate.rank === 1 ? "er" : "e"}</sup>` : "Non retenu";
+
+    $("#scene-kicker").textContent = isRetained ? "CANDIDAT RETENU" : "RÉSULTAT";
+    $("#scene-rank").innerHTML = rankLabel;
+    $("#scene-name").textContent = String(candidate.name ?? "Sans nom").trim() || "Sans nom";
+    $("#scene-status").textContent = String(candidate.status ?? "").trim() || "Statut non renseigné";
+    $("#scene-total").innerHTML = `${fmt(numericTotal(candidate))}<small>/ ${state.data?.max ?? 20}</small>`;
+    $("#scene-scores").innerHTML = renderScoreRows(candidate);
+    $("#scene-index").textContent = `${index + 1} / ${state.sequence.length}`;
+
+    const card = $("#reveal-card");
+    card.classList.remove("show", "reveal-retained", "reveal-eliminated");
+    void card.offsetWidth;
+    card.classList.add(isRetained ? "reveal-retained" : "reveal-eliminated", "show");
+
+    const stage = $("#stage");
+    stage.classList.remove("impact");
+    void stage.offsetWidth;
+    stage.classList.add("impact");
+  }
+
+  function updateSequenceLabel() {
+    const nextIndex = state.current + 1;
+    if (nextIndex >= state.sequence.length) {
+      $("#scene-phase").textContent = "Séquence terminée";
+      return;
+    }
+
+    const nextCandidate = state.sequence[nextIndex];
+    const isRetained = normalizeStatus(nextCandidate) === "retenu";
+    $("#scene-phase").textContent = isRetained
+      ? `Révélation du ${nextCandidate.rank === 1 ? "1er" : `${nextCandidate.rank}e`} rang`
+      : "Révélation des non-retenus";
+  }
+
+  function setRevealLock(locked) {
+    document.body.classList.toggle("reveal-lock", locked);
+    document.documentElement.classList.toggle("reveal-lock", locked);
+  }
+
+  function preventRevealScroll(event) {
+    if (state.phase === "revealing") event.preventDefault();
+  }
+
+  function preventRevealKeys(event) {
+    if (state.phase !== "revealing") return;
+    const blocked = [" ", "PageDown", "PageUp", "ArrowDown", "ArrowUp", "Home", "End"];
+    if (blocked.includes(event.key)) event.preventDefault();
+  }
+
+  function bindScrollLock() {
+    document.addEventListener("wheel", preventRevealScroll, { passive: false });
+    document.addEventListener("touchmove", preventRevealScroll, { passive: false });
+    document.addEventListener("keydown", preventRevealKeys, false);
+  }
+
+  function startMotionLoop() {
+    const camera = $("#scene-camera");
+    const stage = $("#stage");
+    if (!camera || !stage) return;
+
+    const tick = () => {
+      state.mouse.x += (state.mouse.tx - state.mouse.x) * 0.075;
+      state.mouse.y += (state.mouse.ty - state.mouse.y) * 0.075;
+
+      const rotateY = state.mouse.x * 4.5;
+      const rotateX = state.mouse.y * -4;
+
+      camera.style.setProperty("--parallax-x", `${rotateY.toFixed(2)}deg`);
+      camera.style.setProperty("--parallax-y", `${rotateX.toFixed(2)}deg`);
+
+      const time = performance.now() / 1000;
+      stage.style.setProperty("--float-y", `${Math.sin(time * 0.65) * 4}px`);
+      stage.style.setProperty("--float-r", `${Math.sin(time * 0.35) * 0.35}deg`);
+
+      state.raf = requestAnimationFrame(tick);
+    };
+
+    cancelAnimationFrame(state.raf);
+    state.raf = requestAnimationFrame(tick);
+  }
+
+  function bindParallax() {
+    const updateTarget = (clientX, clientY) => {
+      const width = Math.max(window.innerWidth, 1);
+      const height = Math.max(window.innerHeight, 1);
+      state.mouse.tx = Math.max(-1, Math.min(1, (clientX - width / 2) / (width / 2)));
+      state.mouse.ty = Math.max(-1, Math.min(1, (clientY - height / 2) / (height / 2)));
+    };
+
+    window.addEventListener("mousemove", (event) => updateTarget(event.clientX, event.clientY));
+    window.addEventListener("mouseleave", () => {
+      state.mouse.tx = 0;
+      state.mouse.ty = 0;
+    });
+    window.addEventListener("resize", () => {
+      state.mouse.tx = 0;
+      state.mouse.ty = 0;
+    });
+  }
+
+  function createDust() {
+    const dust = $("#dust");
+    const fragment = document.createDocumentFragment();
+
+    for (let i = 0; i < 34; i += 1) {
+      const particle = document.createElement("i");
+      particle.style.setProperty("--x", `${Math.random() * 100}%`);
+      particle.style.setProperty("--y", `${Math.random() * 100}%`);
+      particle.style.setProperty("--d", `${4 + Math.random() * 7}s`);
+      particle.style.setProperty("--delay", `${Math.random() * -8}s`);
+      particle.style.setProperty("--s", `${0.4 + Math.random() * 1.8}`);
+      fragment.appendChild(particle);
+    }
+
+    dust.appendChild(fragment);
+  }
+
+  const audioState = {
+    ctx: null,
+    master: null,
+    drone: null,
+    pulseTimer: null,
+  };
+
+  function pulseSound(isRetained) {
+    const sound = audioState;
+    if (!sound.ctx || sound.ctx.state !== "running") return;
+
+    const now = sound.ctx.currentTime;
+    const oscillator = sound.ctx.createOscillator();
+    const gain = sound.ctx.createGain();
+
+    oscillator.type = isRetained ? "sine" : "triangle";
+    oscillator.frequency.setValueAtTime(isRetained ? 146.83 : 98, now);
+    oscillator.frequency.exponentialRampToValueAtTime(isRetained ? 220 : 130.81, now + 0.28);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(isRetained ? 0.055 : 0.035, now + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.62);
+
+    oscillator.connect(gain).connect(sound.master);
+    oscillator.start(now);
+    oscillator.stop(now + 0.66);
+  }
+
+  function startSuspenseAudio() {
+    if (audioState.ctx) {
+      if (audioState.ctx.state === "suspended") audioState.ctx.resume().catch(() => {});
+      if (audioState.ctx.state === "running") $("#sound-note").textContent = "Ambiance active";
+      return audioState.ctx.state === "running";
+    }
+
+    try {
+      const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextCtor) return false;
+
+      const ctx = new AudioContextCtor();
+      const master = ctx.createGain();
+      master.gain.value = 0.045;
+      master.connect(ctx.destination);
+
+      const drone = ctx.createOscillator();
+      const droneGain = ctx.createGain();
+
+      drone.type = "sine";
+      drone.frequency.value = 48;
+      droneGain.gain.value = 0.3;
+
+      drone.connect(droneGain).connect(master);
+      drone.start();
+
+      audioState.ctx = ctx;
+      audioState.master = master;
+      audioState.drone = drone;
+      audioState.pulseTimer = window.setInterval(() => pulseSound(true), 1900);
+
+      ctx.resume().catch(() => {});
+      if (ctx.state === "running") $("#sound-note").textContent = "Ambiance active";
+      return ctx.state === "running";
+    } catch (error) {
+      console.warn("Audio de suspense indisponible", error);
+      return false;
     }
   }
-}
 
-function card(c, i) {
-  const hide = masked(c), max = data.max || 20;
-  const cls = ["card", c.rank ? "r" + c.rank : "", c.status === "Retenu" && !rv ? "ret" : "", hide ? "masked" : ""].join(" ");
-  const ini = esc((c.name || "?").trim().charAt(0).toUpperCase());
-  const img = c.image ? `<img src="${esc(c.image)}" alt="" loading="lazy" onerror="this.remove()">` : "";
-  return `<article class="${cls}" style="animation-delay:${Math.min(i, 12) * 40}ms">
-    <div class="pic"><span class="ini">${ini}</span>${img}
-      ${c.rank ? `<span class="rank">${c.rank}</span>` : ""}<span class="st">${esc(c.status)}</span></div>
-    <div class="info">
-      <h3>${hide ? "•••••" : esc(c.name) || "Sans nom"}</h3>
-      <div class="score"><b>${hide ? "•,•" : fmt(c.total)}</b><span>/ ${max}</span></div>
-      <div class="meter"><i style="width:${hide ? 0 : Math.min(100, c.total / max * 100)}%"></i></div></div>
-  </article>`;
-}
+  function stopSuspenseAudio() {
+    if (audioState.pulseTimer) window.clearInterval(audioState.pulseTimer);
+    audioState.pulseTimer = null;
 
-function render() {
-  if (!data) return;
-  const list = data.candidates || [];
-  $("#title").textContent = data.title || "Concours de chant";
-  document.title = "Résultats — " + (data.title || "Concours de chant");
-  $("#meta").textContent = data.updatedAt ? "Mis à jour le " + new Date(data.updatedAt).toLocaleString("fr-FR", {dateStyle: "long", timeStyle: "short"}) : "";
-  $("#stats").hidden = rv;
-  $("#stats").innerHTML = `<span><b>${list.length}</b> participants</span><span><b>${list.filter(c => c.status === "Retenu").length}</b> retenus</span>`;
-  const q = query.trim().toLowerCase();
-  const shown = list.filter(c => (rv || filter === "all" || c.status === "Retenu") &&
-    (!q || (c.name || "").toLowerCase().includes(q)));
-  grid.innerHTML = shown.map(card).join("");
-  $("#empty").hidden = shown.length > 0;
-  $("#empty").textContent = list.length ? "Aucun résultat pour cette recherche." : "Aucun participant pour le moment.";
-  const left = rated().length - revealed;
-  $("#rvNext").disabled = left <= 0;
-  $("#rvNext").textContent = left > 0 ? `Révéler le suivant (${left} restant${left > 1 ? "s" : ""})` : "Tous les résultats sont révélés";
-}
+    if (audioState.drone) {
+      try { audioState.drone.stop(); } catch (_) {}
+    }
 
-function next() {
-  if (!rv) return;
-  const r = rated(), idx = r.length - revealed - 1;
-  if (idx < 0) return;
-  revealed++;
-  const pos = data.candidates.indexOf(r[idx]);
-  render();
-  const el = grid.children[pos];
-  if (el) { el.classList.add("pop"); el.scrollIntoView({behavior: "smooth", block: "center"}); }
-}
+    if (audioState.ctx) audioState.ctx.close().catch(() => {});
 
-function setReveal(on) {
-  rv = on; revealed = 0;
-  $("#rv").hidden = !on; $("#bar").classList.toggle("rv", on);
-  $("#btnReveal").hidden = on;
-  render();
-}
+    audioState.ctx = null;
+    audioState.master = null;
+    audioState.drone = null;
+  }
 
-document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
-  filter = b.dataset.f;
-  document.querySelectorAll(".seg button").forEach(x => x.classList.toggle("on", x === b));
-  render();
-}));
-$("#q").addEventListener("input", e => { query = e.target.value; render(); });
-$("#btnReveal").addEventListener("click", () => setReveal(true));
-$("#rvOff").addEventListener("click", () => setReveal(false));
-$("#rvNext").addEventListener("click", next);
-$("#rvAll").addEventListener("click", () => { revealed = rated().length; render(); });
-$("#btnFull").addEventListener("click", () => {
-  if (document.fullscreenElement) document.exitFullscreen();
-  else document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
-});
-document.addEventListener("keydown", e => {
-  if (!rv || e.target.tagName === "INPUT") return;
-  if (e.key === " " || e.key === "ArrowRight" || e.key === "Enter") { e.preventDefault(); next(); }
-  if (e.key === "Escape") setReveal(false);
-});
-document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+  function attachAudioFallback() {
+    const unlock = () => {
+      if (state.phase !== "revealing") return;
+      if (startSuspenseAudio()) {
+        window.removeEventListener("pointerdown", unlock);
+        window.removeEventListener("keydown", unlock);
+      }
+    };
 
-load();
-setInterval(load, 10000);
+    window.addEventListener("pointerdown", unlock);
+    window.addEventListener("keydown", unlock);
+  }
+
+  async function loadData() {
+    const response = await fetch(`resultats.json?t=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  function wait(milliseconds) {
+    return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+  }
+
+  async function revealSequence() {
+    for (let index = 0; index < state.sequence.length; index += 1) {
+      state.current = index;
+      const candidate = state.sequence[index];
+
+      renderSceneCandidate(candidate, index);
+      updateSequenceLabel();
+      pulseSound(normalizeStatus(candidate) === "retenu");
+
+      const duration = normalizeStatus(candidate) === "retenu"
+        ? DURATIONS.retained
+        : DURATIONS.nonRetained;
+
+      await wait(duration);
+      if (index < state.sequence.length - 1) await wait(DURATIONS.between);
+    }
+
+    completeReveal();
+  }
+
+  function completeReveal() {
+    state.revealed = true;
+    state.phase = "completed";
+    stopSuspenseAudio();
+    setRevealLock(false);
+
+    $("#sound-note").textContent = "Séquence terminée";
+    $("#scene-phase").textContent = "Résultats disponibles";
+    $("#completion").hidden = false;
+    $("#reveal-scene").classList.add("done");
+
+    const completedTitle = $("#completed-title");
+    completedTitle.textContent = state.data.title || "Résultats";
+
+    renderResults();
+
+    if (state.poll) window.clearInterval(state.poll);
+    state.poll = window.setInterval(refreshResults, 15000);
+  }
+
+  function renderResults() {
+    if (!state.data) return;
+
+    const candidates = [...state.retained, ...state.nonRetained];
+    const max = Number(state.data.max ?? 20) || 20;
+    const query = $("#q").value.trim().toLocaleLowerCase("fr-FR");
+    const filter = $("#filter").value;
+
+    const filtered = candidates.filter((candidate) => {
+      const matchesQuery = !query
+        || String(candidate.name ?? "").toLocaleLowerCase("fr-FR").includes(query);
+      const matchesFilter = filter === "all"
+        || (filter === "ret" && normalizeStatus(candidate) === "retenu");
+
+      return matchesQuery && matchesFilter;
+    });
+
+    $("#stats").innerHTML = `
+      <span><b>${state.data.candidates.length}</b> participants</span>
+      <span><b>${state.retained.length}</b> retenus</span>
+      <span><b>${state.nonRetained.length}</b> non retenus</span>
+    `;
+
+    $("#meta").textContent = state.data.updatedAt
+      ? `Mis à jour le ${new Date(state.data.updatedAt).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" })}`
+      : "Résultats publiés";
+
+    const grid = $("#grid");
+
+    grid.innerHTML = filtered.map((candidate) => {
+      const retained = normalizeStatus(candidate) === "retenu";
+      const total = numericTotal(candidate);
+      const percent = Math.max(0, Math.min(100, (total / max) * 100));
+
+      return `
+        <article class="result-card ${retained ? "retained" : "eliminated"}">
+          <div class="result-card-top">
+            <span class="result-status">${esc(candidate.status || "Statut non renseigné")}</span>
+            ${candidate.rank ? `<span class="result-rank">${candidate.rank}<sup>${candidate.rank === 1 ? "er" : "e"}</sup></span>` : ""}
+          </div>
+          <h2>${esc(String(candidate.name ?? "Sans nom").trim() || "Sans nom")}</h2>
+          <div class="result-total"><strong>${fmt(total)}</strong><span>/ ${max}</span></div>
+          <div class="result-meter"><i style="width:${percent}%"></i></div>
+          <div class="result-details">${renderScoreRows(candidate)}</div>
+        </article>
+      `;
+    }).join("");
+
+    $("#empty").hidden = filtered.length > 0;
+    $("#empty").textContent = state.data.candidates.length
+      ? "Aucun résultat ne correspond à cette recherche."
+      : "Aucun participant.";
+  }
+
+  async function refreshResults() {
+    if (state.phase !== "completed") return;
+
+    try {
+      const fresh = await loadData();
+      if (JSON.stringify(fresh) === JSON.stringify(state.data)) return;
+
+      // Une mise à jour après publication ne redémarre jamais la séquence de suspense.
+      state.data = fresh;
+      const ranking = buildRanking(fresh.candidates || []);
+      state.retained = ranking.retained;
+      state.nonRetained = ranking.nonRetained;
+      renderResults();
+    } catch (error) {
+      console.warn("Actualisation des résultats impossible", error);
+    }
+  }
+
+  function bindUI() {
+    $("#q").addEventListener("input", renderResults);
+    $("#filter").addEventListener("change", renderResults);
+
+    $("#btnFull").addEventListener("click", () => {
+      if (document.fullscreenElement) document.exitFullscreen?.();
+      else document.documentElement.requestFullscreen?.().catch(() => {});
+    });
+  }
+
+  async function boot() {
+    try {
+      const data = await loadData();
+
+      if (!Array.isArray(data?.candidates) || data.candidates.length === 0) {
+        throw new Error("Données de résultats absentes");
+      }
+
+      state.data = data;
+
+      const ranking = buildRanking(data.candidates);
+      state.retained = ranking.retained;
+      state.nonRetained = ranking.nonRetained;
+      state.sequence = [...ranking.retained]
+        .sort((a, b) => b.rank - a.rank)
+        .concat(ranking.nonRetained);
+
+      $("#title").textContent = data.title || "Concours de chant";
+      document.title = `Résultats — ${data.title || "Concours de chant"}`;
+      $("#loading").hidden = true;
+      $("#reveal-scene").hidden = false;
+      $("#completion").hidden = true;
+      $("#sound-note").textContent = "Préparation de l’ambiance…";
+
+      createDust();
+      startMotionLoop();
+      bindParallax();
+      bindScrollLock();
+
+      state.phase = "revealing";
+      setRevealLock(true);
+      updateSequenceLabel();
+
+      // Tentative d'autoplay. Les navigateurs peuvent exiger un premier geste utilisateur pour l'audio.
+      if (!startSuspenseAudio()) attachAudioFallback();
+
+      await wait(900);
+      await revealSequence();
+    } catch (error) {
+      state.phase = "error";
+      setRevealLock(false);
+      $("#loading").hidden = false;
+      $("#reveal-scene").hidden = true;
+      $("#loading").textContent = "Les résultats ne sont pas disponibles pour le moment.";
+      console.error(error);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    bindUI();
+    boot();
+  });
 })();
