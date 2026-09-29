@@ -258,7 +258,6 @@
 
       renderSceneCandidate(candidate, index);
       updateSequenceLabel();
-      pulseSound(normalizeStatus(candidate) === "retenu");
 
       const duration = normalizeStatus(candidate) === "retenu"
         ? DURATIONS.retained
@@ -366,6 +365,9 @@
   function bindUI() {
     $("#q").addEventListener("input", renderResults);
     $("#filter").addEventListener("change", renderResults);
+    $("#sound-unlock").addEventListener("click", () => {
+      startSuspenseAudio();
+    });
 
     $("#btnFull").addEventListener("click", () => {
       if (document.fullscreenElement) document.exitFullscreen?.();
