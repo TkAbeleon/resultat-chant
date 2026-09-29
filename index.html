@@ -41,14 +41,6 @@
     <div class="ring ring-b" aria-hidden="true"></div>
     <div class="floor-grid" aria-hidden="true"></div>
 
-    <div class="scene-header">
-      <div>
-        <span class="eyebrow">Résultats officiels</span>
-        <h1 id="title">Concours de chant</h1>
-        <p id="scene-phase">Préparation de la révélation…</p>
-      </div>
-    </div>
-
     <div id="scene-camera" class="scene-camera">
       <div id="stage" class="stage">
         <article id="reveal-card" class="reveal-card" aria-live="polite">
@@ -58,21 +50,14 @@
             <div class="card-glow"></div>
             <div class="card-noise"></div>
             <div class="card-content">
-              <div class="card-topline">
-                <span id="scene-kicker">CANDIDAT RETENU</span>
-                <span id="scene-index">— / —</span>
-              </div>
-
               <div class="rank-lockup">
                 <span id="scene-rank">—</span>
               </div>
 
               <h2 id="scene-name">—</h2>
-              <span id="scene-status" class="scene-status">—</span>
 
               <div class="scene-score-wrap">
                 <div id="scene-total" class="scene-total">—</div>
-                <div class="scene-score-label">NOTE TOTALE</div>
               </div>
 
               <div id="scene-scores" class="score-list"></div>
@@ -82,12 +67,11 @@
       </div>
     </div>
 
-    <div class="scene-footer">
-      <span id="sound-note">Préparation de l’ambiance…</span>
-      <span>Révélation automatique</span>
-      <a id="music-credit" href="https://peritune.com/blog/2017/07/19/desert/" target="_blank" rel="noopener noreferrer">Musique : Desert — PeriTune</a>
-      <button id="sound-unlock" class="sound-unlock" type="button" hidden>Activer le son</button>
-    </div>
+    <button id="sound-unlock" class="sound-unlock" type="button" aria-label="Activer le son" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M4 9v6h4l5 4V5L8 9H4zm11.2 1.05a4 4 0 0 1 0 3.9m2.15-6.05a7 7 0 0 1 0 8.2"/>
+      </svg>
+    </button>
     <audio id="suspense-audio" src="https://peritune.com/music/PerituneMaterial_Desert.mp3" preload="auto" autoplay></audio>
   </section>
 

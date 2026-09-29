@@ -184,3 +184,45 @@ main{max-width:1200px;margin:0 auto;padding:1.35rem 1rem 5rem}
 .sound-unlock{display:inline-flex;border:1px solid rgba(255,255,255,.12);background:rgba(10,10,12,.72);color:#d6d0c7;border-radius:999px;padding:.3rem .65rem;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
 #music-credit{color:#77736d;text-decoration:none}#music-credit:hover{color:#aaa49c}#suspense-audio{display:none}
 @media(max-width:700px){.rank-lockup{gap:.55rem}.rank-lockup .rank-badge{width:3.7rem;height:4.2rem}.scene-footer{justify-content:center;flex-wrap:wrap;text-align:center}#music-credit{flex-basis:100%}}
+/* Reveal mode: minimal chrome and strict viewport-safe geometry. */
+.reveal-scene{width:100%;height:100svh;min-height:100svh;overflow:hidden}
+.scene-header,.scene-footer{display:none}
+.scene-camera{position:absolute;inset:0;padding:clamp(12px,3vw,28px);perspective:1200px}
+.stage{width:min(92vw,430px);height:min(78svh,560px);max-height:calc(100svh - 24px);display:grid;place-items:center}
+.reveal-card{width:min(92vw,430px);height:min(74svh,520px);max-height:calc(100svh - 40px);aspect-ratio:auto}
+.card-content{padding:clamp(16px,4vw,30px);display:flex;flex-direction:column;justify-content:center;gap:clamp(8px,1.6vh,14px)}
+.rank-lockup{margin:0;justify-content:center}
+#scene-name{margin:0;max-width:100%;text-align:center;font-size:clamp(1.35rem,6.2vw,2.65rem);line-height:1.05}
+.scene-score-wrap{margin:0;text-align:center}
+.scene-total{font-size:clamp(2.45rem,12vw,4.6rem)}
+.score-list{margin:0;padding-top:clamp(10px,1.8vh,16px);grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(8px,2.2vw,14px)}
+.score-row{align-items:center;text-align:center;gap:2px}
+.score-row span{max-width:100%;font-size:clamp(.58rem,2.3vw,.7rem)}
+.score-row strong{font-size:clamp(.82rem,3.2vw,1rem)}
+.sound-unlock{position:fixed;z-index:50;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));width:44px;height:44px;border:1px solid rgba(255,255,255,.18);background:rgba(8,8,10,.82);backdrop-filter:blur(12px);border-radius:50%;padding:10px;color:#d5ad58}
+.sound-unlock svg{display:block;width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+#suspense-audio{display:none}
+@media (max-width:430px){
+  .scene-camera{padding:8px}
+  .stage{width:96vw;height:82svh}
+  .reveal-card{width:calc(100vw - 20px);height:min(70svh,490px);max-height:calc(100svh - 28px);border-radius:18px}
+  .card-content{padding:14px}
+  .rank-lockup .rank-badge{width:58px;height:65px}
+  #scene-name{font-size:clamp(1.25rem,6.6vw,2.15rem)}
+  .scene-total{font-size:clamp(2.15rem,11vw,3.6rem)}
+  .score-list{gap:8px 5px}
+}
+@media (max-height:620px) and (orientation:landscape){
+  .stage{width:min(82vw,580px);height:92svh}
+  .reveal-card{width:min(62vw,430px);height:88svh;max-height:calc(100svh - 16px)}
+  .card-content{gap:5px;padding:10px 14px}
+  .rank-lockup .rank-badge{width:48px;height:54px}
+  #scene-name{font-size:clamp(1rem,4.2vw,1.65rem)}
+  .scene-total{font-size:clamp(1.8rem,8vw,3rem)}
+  .score-list{padding-top:7px;gap:5px}
+  .score-row span{font-size:.55rem}
+  .score-row strong{font-size:.78rem}
+}
+@media (prefers-reduced-motion:reduce){
+  .stage,.reveal-card,.atmosphere,.ring,.dust i,.card-glow{animation:none!important;transition:none!important}
+}

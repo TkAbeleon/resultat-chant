@@ -98,13 +98,10 @@
     const isRetained = normalizeStatus(candidate) === "retenu";
     const rankLabel = rankBadgeSvg(candidate.rank);
 
-    $("#scene-kicker").textContent = isRetained ? "CANDIDAT RETENU" : "RÉSULTAT";
     $("#scene-rank").innerHTML = rankLabel;
     $("#scene-name").textContent = String(candidate.name ?? "Sans nom").trim() || "Sans nom";
-    $("#scene-status").textContent = String(candidate.status ?? "").trim() || "Statut non renseigné";
     $("#scene-total").innerHTML = `${fmt(numericTotal(candidate))}<small>/ ${state.data?.max ?? 20}</small>`;
     $("#scene-scores").innerHTML = renderScoreRows(candidate);
-    $("#scene-index").textContent = `${index + 1} / ${state.sequence.length}`;
 
     const card = $("#reveal-card");
     card.dataset.rank = candidate.rank ? String(candidate.rank) : "eliminated";
@@ -117,20 +114,6 @@
     stage.classList.remove("impact");
     void stage.offsetWidth;
     stage.classList.add("impact");
-  }
-
-  function updateSequenceLabel() {
-    const nextIndex = state.current + 1;
-    if (nextIndex >= state.sequence.length) {
-      $("#scene-phase").textContent = "Séquence terminée";
-      return;
-    }
-
-    const nextCandidate = state.sequence[nextIndex];
-    const isRetained = normalizeStatus(nextCandidate) === "retenu";
-    $("#scene-phase").textContent = isRetained
-      ? `Révélation du ${nextCandidate.rank === 1 ? "1er" : `${nextCandidate.rank}e`} rang`
-      : "Révélation des non-retenus";
   }
 
   function setRevealLock(locked) {
@@ -225,11 +208,9 @@
     audio.volume = 0.42;
     try {
       await audio.play();
-      $("#sound-note").textContent = "Ambiance active";
-      $("#sound-unlock").hidden = true;
+        $("#sound-unlock").hidden = true;
       return true;
     } catch (error) {
-      $("#sound-note").textContent = "Cliquez sur « Activer le son » pour écouter la musique";
       $("#sound-unlock").hidden = false;
       return false;
     }
@@ -265,7 +246,6 @@
       const candidate = state.sequence[index];
 
       renderSceneCandidate(candidate, index);
-      updateSequenceLabel();
 
       const duration = normalizeStatus(candidate) === "retenu"
         ? DURATIONS.retained
@@ -284,8 +264,6 @@
     stopSuspenseAudio();
     setRevealLock(false);
 
-    $("#sound-note").textContent = "Séquence terminée";
-    $("#scene-phase").textContent = "Résultats disponibles";
     $("#completion").hidden = false;
     $("#reveal-scene").classList.add("done");
 
@@ -400,12 +378,9 @@
         .sort((a, b) => b.rank - a.rank)
         .concat(ranking.nonRetained);
 
-      $("#title").textContent = data.title || "Concours de chant";
-      document.title = `Résultats — ${data.title || "Concours de chant"}`;
       $("#loading").hidden = true;
       $("#reveal-scene").hidden = false;
       $("#completion").hidden = true;
-      $("#sound-note").textContent = "Préparation de l’ambiance…";
 
       createDust();
       startMotionLoop();
