@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Résultats — Concours de chant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="hero">
+  <p class="eyebrow">Résultats officiels</p>
+  <h1 id="title">Concours de chant</h1>
+  <p id="meta" class="meta"></p>
+  <div id="stats" class="stats"></div>
+</header>
+
+<nav id="bar" class="bar" aria-label="Outils">
+  <input id="q" type="search" placeholder="Rechercher un nom" aria-label="Rechercher">
+  <div class="seg" role="group" aria-label="Filtre">
+    <button type="button" data-f="all" class="on">Tous</button>
+    <button type="button" data-f="ret">Retenus</button>
+  </div>
+  <button id="btnReveal" type="button" class="ghost">Dépouillement</button>
+  <button id="btnFull" type="button" class="ghost" aria-label="Plein écran">⛶</button>
+</nav>
+
+<main>
+  <div id="grid" class="grid" aria-live="polite"></div>
+  <p id="empty" class="empty" hidden></p>
+</main>
+
+<div id="rv" class="rv" hidden>
+  <button id="rvNext" type="button" class="go">Révéler le suivant</button>
+  <button id="rvAll" type="button" class="ghost">Tout révéler</button>
+  <button id="rvOff" type="button" class="ghost">Quitter</button>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

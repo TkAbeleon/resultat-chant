@@ -1,0 +1,84 @@
+{
+  "version": 2,
+  "updatedAt": "2026-09-29T11:49:34.139Z",
+  "settings": {
+    "retained": 4
+  },
+  "candidates": [
+    {
+      "id": "qo1mjnj",
+      "matricule": "",
+      "name": "Ravololoniaina Sahaza",
+      "video": "1.mp4",
+      "scores": {
+        "justesse": 4.5,
+        "rythme": 3.5,
+        "timbre": 3.5,
+        "interpretation": 3
+      },
+      "total": 14.5,
+      "status": "Retenu",
+      "remark": ""
+    },
+    {
+      "id": "n00y4wl",
+      "matricule": "",
+      "name": "Andy Mih Tiana",
+      "video": "2.mp4",
+      "scores": {
+        "justesse": 3.5,
+        "rythme": 3,
+        "timbre": 3,
+        "interpretation": 3
+      },
+      "total": 12.5,
+      "status": "Éliminé",
+      "remark": ""
+    },
+    {
+      "id": "gakosb2",
+      "matricule": "",
+      "name": " Tøjø Rāz",
+      "video": "3.mp4",
+      "scores": {
+        "justesse": 5,
+        "rythme": 4.5,
+        "timbre": 4,
+        "interpretation": 3.5
+      },
+      "total": 17,
+      "status": "Retenu",
+      "remark": ""
+    },
+    {
+      "id": "9awu1cj",
+      "matricule": "",
+      "name": " Sitraka Fyh",
+      "video": "5.mp4",
+      "scores": {
+        "justesse": 5,
+        "rythme": 4.5,
+        "timbre": 4,
+        "interpretation": 3.5
+      },
+      "total": 17,
+      "status": "Retenu",
+      "remark": ""
+    },
+    {
+      "id": "ftcdn4q",
+      "matricule": "",
+      "name": " Tantely Mïotisõa",
+      "video": "6.mp4",
+      "scores": {
+        "justesse": 4,
+        "rythme": 3.5,
+        "timbre": 3.5,
+        "interpretation": 3
+      },
+      "total": 14,
+      "status": "Retenu",
+      "remark": ""
+    }
+  ]
+}
