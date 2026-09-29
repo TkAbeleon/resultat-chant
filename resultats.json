@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-29T14:51:21.989Z",
+  "updatedAt": "2026-09-29T16:22:58.739Z",
   "settings": {
-    "retained": 4,
+    "retained": 5,
     "max": 20
   },
   "candidates": [
@@ -99,6 +99,22 @@
         "interpretation": 3
       },
       "total": 15.5,
+      "status": "Retenu",
+      "remark": ""
+    },
+    {
+      "id": "o0p5u85",
+      "matricule": "",
+      "name": "Ny Toky Aray",
+      "video": "7.mp4",
+      "photo": "",
+      "scores": {
+        "justesse": 5,
+        "rythme": 4,
+        "timbre": 4,
+        "interpretation": 3.5
+      },
+      "total": 16.5,
       "status": "Retenu",
       "remark": ""
     }
