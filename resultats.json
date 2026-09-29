@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-29T14:47:00.311Z",
+  "updatedAt": "2026-09-29T14:51:21.989Z",
   "settings": {
     "retained": 4,
     "max": 20
@@ -19,7 +19,7 @@
         "interpretation": 3
       },
       "total": 14.5,
-      "status": "Retenu",
+      "status": "Éliminé",
       "remark": ""
     },
     {
@@ -77,13 +77,13 @@
       "video": "6.mp4",
       "photo": "",
       "scores": {
-        "justesse": 4,
-        "rythme": 3.5,
+        "justesse": 4.5,
+        "rythme": 4,
         "timbre": 3.5,
         "interpretation": 3
       },
-      "total": 14,
-      "status": "Éliminé",
+      "total": 15,
+      "status": "Retenu",
       "remark": ""
     },
     {
@@ -94,11 +94,11 @@
       "photo": "",
       "scores": {
         "justesse": 4.5,
-        "rythme": 3.5,
+        "rythme": 4,
         "timbre": 4,
         "interpretation": 3
       },
-      "total": 15,
+      "total": 15.5,
       "status": "Retenu",
       "remark": ""
     }
