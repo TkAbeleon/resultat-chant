@@ -1,8 +1,9 @@
 {
   "version": 2,
-  "updatedAt": "2026-09-29T11:49:34.139Z",
+  "updatedAt": "2026-09-29T14:43:57.920Z",
   "settings": {
-    "retained": 4
+    "retained": 4,
+    "max": 20
   },
   "candidates": [
     {
@@ -10,6 +11,7 @@
       "matricule": "",
       "name": "Ravololoniaina Sahaza",
       "video": "1.mp4",
+      "photo": "",
       "scores": {
         "justesse": 4.5,
         "rythme": 3.5,
@@ -25,6 +27,7 @@
       "matricule": "",
       "name": "Andy Mih Tiana",
       "video": "2.mp4",
+      "photo": "",
       "scores": {
         "justesse": 3.5,
         "rythme": 3,
@@ -40,6 +43,7 @@
       "matricule": "",
       "name": " Tøjø Rāz",
       "video": "3.mp4",
+      "photo": "",
       "scores": {
         "justesse": 5,
         "rythme": 4.5,
@@ -55,13 +59,14 @@
       "matricule": "",
       "name": " Sitraka Fyh",
       "video": "5.mp4",
+      "photo": "",
       "scores": {
         "justesse": 5,
         "rythme": 4.5,
         "timbre": 4.5,
         "interpretation": 3.5
       },
-      "total": 17,
+      "total": 17.5,
       "status": "Retenu",
       "remark": ""
     },
@@ -70,6 +75,7 @@
       "matricule": "",
       "name": " Tantely Mïotisõa",
       "video": "6.mp4",
+      "photo": "",
       "scores": {
         "justesse": 4,
         "rythme": 3.5,
@@ -77,6 +83,22 @@
         "interpretation": 3
       },
       "total": 14,
+      "status": "Éliminé",
+      "remark": ""
+    },
+    {
+      "id": "pl2mbi4",
+      "matricule": "",
+      "name": "Samedi Juliana",
+      "video": "4.mp4",
+      "photo": "",
+      "scores": {
+        "justesse": 4,
+        "rythme": 3.5,
+        "timbre": 4,
+        "interpretation": 3
+      },
+      "total": 14.5,
       "status": "Retenu",
       "remark": ""
     }
