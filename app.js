@@ -389,7 +389,6 @@
 
       state.phase = "revealing";
       setRevealLock(true);
-      updateSequenceLabel();
 
       // Tentative d'autoplay. Les navigateurs peuvent exiger un premier geste utilisateur pour l'audio.
       await startSuspenseAudio();
