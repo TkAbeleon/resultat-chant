@@ -166,3 +166,21 @@ main{max-width:1200px;margin:0 auto;padding:1.35rem 1rem 5rem}
 #music-credit:hover{color:#aaa49c}
 #suspense-audio{display:none}
 @media(max-width:700px){.scene-footer{justify-content:center;flex-wrap:wrap;text-align:center;line-height:1.35}#music-credit{flex-basis:100%}}
+/* Badges SVG sans emoji — couleurs distinctes par rang et rouge pour les éliminés. */
+.rank-badge{display:inline-flex;align-items:center;justify-content:center;width:clamp(4rem,10vw,5.5rem);height:clamp(4.5rem,11vw,6rem);flex:none;filter:drop-shadow(0 10px 22px rgba(0,0,0,.35))}
+.rank-badge svg{width:100%;height:100%;display:block;overflow:visible}
+.rank-lockup{display:flex;align-items:center;gap:.8rem}
+.rank-lockup .rank-badge{width:clamp(3.8rem,9vw,5rem);height:clamp(4.3rem,10vw,5.5rem)}
+.reveal-card[data-rank="1"] .card-face{box-shadow:inset 0 0 0 1px rgba(242,189,63,.25),0 22px 70px rgba(0,0,0,.6),0 0 48px rgba(242,189,63,.09)}
+.reveal-card[data-rank="2"] .card-face{box-shadow:inset 0 0 0 1px rgba(227,231,238,.2),0 22px 70px rgba(0,0,0,.6),0 0 44px rgba(227,231,238,.06)}
+.reveal-card[data-rank="3"] .card-face{box-shadow:inset 0 0 0 1px rgba(209,139,94,.24),0 22px 70px rgba(0,0,0,.6),0 0 44px rgba(209,139,94,.07)}
+.reveal-card[data-rank="4"] .card-face{box-shadow:inset 0 0 0 1px rgba(98,168,232,.24),0 22px 70px rgba(0,0,0,.6),0 0 44px rgba(98,168,232,.07)}
+.reveal-card[data-status="eliminated"] .rank-badge svg{filter:drop-shadow(0 0 16px rgba(239,91,99,.18))}
+.result-card.rank-1{border-top:2px solid #f2bd3f}.result-card.rank-1 .result-rank{color:#f2bd3f}
+.result-card.rank-2{border-top:2px solid #e3e7ee}.result-card.rank-2 .result-rank{color:#e3e7ee}
+.result-card.rank-3{border-top:2px solid #d18b5e}.result-card.rank-3 .result-rank{color:#d18b5e}
+.result-card.rank-4{border-top:2px solid #62a8e8}.result-card.rank-4 .result-rank{color:#62a8e8}
+.result-card.rank-eliminated{border-top:2px solid #ef5b63}.result-card.rank-eliminated .result-status{color:#ef5b63}.result-card.rank-eliminated .result-meter i{background:#ef5b63}
+.sound-unlock{display:inline-flex;border:1px solid rgba(255,255,255,.12);background:rgba(10,10,12,.72);color:#d6d0c7;border-radius:999px;padding:.3rem .65rem;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+#music-credit{color:#77736d;text-decoration:none}#music-credit:hover{color:#aaa49c}#suspense-audio{display:none}
+@media(max-width:700px){.rank-lockup{gap:.55rem}.rank-lockup .rank-badge{width:3.7rem;height:4.2rem}.scene-footer{justify-content:center;flex-wrap:wrap;text-align:center}#music-credit{flex-basis:100%}}

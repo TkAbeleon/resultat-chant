@@ -64,6 +64,19 @@
     return { retained, nonRetained };
   }
 
+  function rankBadgeSvg(rank) {
+    const numericRank = Number(rank);
+    const colors = { 1: "#f2bd3f", 2: "#e3e7ee", 3: "#d18b5e", 4: "#62a8e8" };
+    const accent = colors[numericRank] || "#ef5b63";
+    const label = numericRank ? "Rang " + numericRank : "Éliminé";
+    const mark = numericRank ? String(numericRank) : "×";
+    return '<span class="rank-badge rank-' + (numericRank || "eliminated") + '" role="img" aria-label="' + label + '"><svg viewBox="0 0 80 90" aria-hidden="true" focusable="false">' +
+      '<path fill="' + accent + '" d="M23 4h14l3 22-10-7-10 7zM43 4h14l3 22-10-7-10 7z"/>' +
+      '<circle cx="40" cy="51" r="30" fill="rgba(8,8,10,.94)" stroke="' + accent + '" stroke-width="3"/>' +
+      '<circle cx="40" cy="51" r="24" fill="' + accent + '" opacity=".18"/>' +
+      '<text x="40" y="59" text-anchor="middle" fill="' + accent + '" font-family="Inter,Arial,sans-serif" font-size="28" font-weight="800">' + mark + '</text></svg></span>';
+  }
+
   function renderScoreRows(candidate) {
     const scores = candidate?.scores ?? {};
     const rows = [
@@ -83,7 +96,7 @@
 
   function renderSceneCandidate(candidate, index) {
     const isRetained = normalizeStatus(candidate) === "retenu";
-    const rankLabel = candidate.rank ? `Rang ${candidate.rank}<sup>${candidate.rank === 1 ? "er" : "e"}</sup>` : "Non retenu";
+    const rankLabel = rankBadgeSvg(candidate.rank);
 
     $("#scene-kicker").textContent = isRetained ? "CANDIDAT RETENU" : "RÉSULTAT";
     $("#scene-rank").innerHTML = rankLabel;
@@ -210,14 +223,13 @@
     if (!audio) return false;
     audioState.element = audio;
     audio.volume = 0.42;
-
     try {
       await audio.play();
       $("#sound-note").textContent = "Ambiance active";
       $("#sound-unlock").hidden = true;
       return true;
     } catch (error) {
-      $("#sound-note").textContent = "Le navigateur attend l’activation du son";
+      $("#sound-note").textContent = "Cliquez sur « Activer le son » pour écouter la musique";
       $("#sound-unlock").hidden = false;
       return false;
     }
@@ -232,11 +244,7 @@
       const progress = Math.min(1, (performance.now() - startedAt) / 1000);
       audio.volume = startVolume * (1 - progress);
       if (progress < 1) requestAnimationFrame(fade);
-      else {
-        audio.pause();
-        audio.currentTime = 0;
-        audio.volume = 0.42;
-      }
+      else { audio.pause(); audio.currentTime = 0; audio.volume = 0.42; }
     };
     requestAnimationFrame(fade);
   }
